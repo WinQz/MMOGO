@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golang MMORPG</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Top HUD Bar -->
+        <div id="topHUD">
+            <div id="playerInfo">
+                <div id="avatar">
+                    <img src="/static/avatar.png" alt="Avatar" onerror="this.style.display='none'">
+                    <div id="avatarFallback">👤</div>
+                </div>
+                <div id="playerDetails">
+                    <div id="playerName">Player: <span id="nameDisplay">Guest</span></div>
+                    <div id="playerStats">
+                        <div class="stat">❤️ <span id="health">100/100</span></div>
+                        <div class="stat">⚡ <span id="mana">50/50</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="gameTitle">
+                <h1>🏰 Golang MMORPG</h1>
+                <div id="serverInfo">
+                    <span id="status">Connecting...</span>
+                    <span id="onlineCount">Players: 0</span>
+                </div>
+            </div>
+            
+            <div id="gameControls">
+                <button id="settingsBtn" class="hud-btn">⚙️</button>
+                <button id="logoutBtn" class="hud-btn">🚪</button>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div id="gameArea">
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            
+            <!-- Mini Map -->
+            <div id="miniMap">
+                <div id="miniMapTitle">📍 Mini Map</div>
+                <canvas id="miniMapCanvas" width="200" height="150"></canvas>
+            </div>
+            
+            <!-- Position Display -->
+            <div id="positionDisplay">
+                <div id="coordinates">📍 Position: <span id="posDisplay">0, 0</span></div>
+            </div>
+        </div>
+
+        <!-- Bottom Right Chat Panel -->
+        <div id="chatPanel">
+            <div id="chatHeader">
+                <span id="chatTitle">💬 Chat</span>
+                <div id="chatControls">
+                    <button id="chatMinimize">−</button>
+                    <button id="chatClose">×</button>
+                </div>
+            </div>
+            
+            <div id="chatTabs">
+                <button class="chat-tab active" data-channel="all">All</button>
+                <button class="chat-tab" data-channel="system">System</button>
+                <button class="chat-tab" data-channel="guild">Guild</button>
+            </div>
+            
+            <div id="chatMessages"></div>
+            
+            <div id="chatInputArea">
+                <input type="text" id="chatInput" placeholder="Type your message..." maxlength="200">
+                <button id="sendButton">📤</button>
+            </div>
+        </div>
+
+        <!-- Game Instructions -->
+        <div id="instructions">
+            <div id="instructionsContent">
+                <h3>🎮 Controls</h3>
+                <div class="control-group">
+                    <div class="control-item">
+                        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move
+                    </div>
+                    <div class="control-item">
+                        <kbd>Enter</kbd> Chat
+                    </div>
+                    <div class="control-item">
+                        <kbd>Click</kbd> Interact
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/game.js"></script>
+</body>
+</html>
