@@ -109,13 +109,16 @@ func (h *Hub) BroadcastPlayerLeft(playerID string) {
 	h.BroadcastToAll(message)
 }
 
-// BroadcastPlayerMoved announces player movement to all clients
+// BroadcastPlayerMoved announces player movement to all clients with sprint status
 func (h *Hub) BroadcastPlayerMoved(player *game.Player) {
+	current, _, _ := player.GetStaminaInfo()
+
 	message := map[string]interface{}{
-		"type": "player_moved",
-		"id":   player.ID,
-		"x":    player.Position.X,
-		"y":    player.Position.Y,
+		"type":      "player_moved",
+		"id":        player.ID,
+		"x":         player.Position.X,
+		"y":         player.Position.Y,
+		"sprinting": current > 0 && player.Stamina.IsRunning,
 	}
 	h.BroadcastToAll(message)
 }

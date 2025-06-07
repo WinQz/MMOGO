@@ -14,7 +14,9 @@ export class PlayerManager {
             targetY: playerData.y,
             color: this.getPlayerColor(playerData.id),
             moving: false,
-            showInteractionHint: false
+            showInteractionHint: false,
+            sprinting: false,
+            lastSprintTime: 0
         };
         
         this.players.set(playerData.id, player);
@@ -31,6 +33,14 @@ export class PlayerManager {
             player.targetX = data.x;
             player.targetY = data.y;
             player.moving = true;
+            
+            // Update sprint status if provided
+            if (data.sprinting !== undefined) {
+                player.sprinting = data.sprinting;
+                if (data.sprinting) {
+                    player.lastSprintTime = Date.now();
+                }
+            }
         }
     }
     
@@ -70,8 +80,13 @@ export class PlayerManager {
             myPlayer.x = newX;
             myPlayer.y = newY;
             myPlayer.moving = true;
+            myPlayer.sprinting = sprinting;
             
-            // Send movement to server
+            if (sprinting) {
+                myPlayer.lastSprintTime = Date.now();
+            }
+            
+            // Send movement to server with sprint status
             gameClient.getNetworkManager().sendMessage({
                 type: 'move',
                 x: newX,
@@ -94,6 +109,12 @@ export class PlayerManager {
             if (player.targetX !== undefined && player.targetY !== undefined) {
                 player.x += (player.targetX - player.x) * this.interpolationFactor;
                 player.y += (player.targetY - player.y) * this.interpolationFactor;
+            }
+            
+            // Update sprint status based on recent activity
+            const now = Date.now();
+            if (player.sprinting && now - player.lastSprintTime > 500) {
+                player.sprinting = false;
             }
         });
     }

@@ -40,7 +40,14 @@ export class RenderManager {
         
         // Draw all players
         const players = this.gameClient.getPlayerManager().getAllPlayers();
-        players.forEach(player => this.drawPlayer(player));
+        players.forEach(player => {
+            this.drawPlayer(player);
+            
+            // Create sprint particles for any sprinting player
+            if (player.sprinting) {
+                this.createSprintParticles(player.x, player.y);
+            }
+        });
     }
     
     drawGrid() {
@@ -105,6 +112,19 @@ export class RenderManager {
             this.ctx.restore();
         }
         
+        // Draw sprint effect for any sprinting player
+        if (player.sprinting) {
+            this.ctx.save();
+            this.ctx.strokeStyle = '#87ceeb';
+            this.ctx.lineWidth = 2;
+            this.ctx.globalAlpha = 0.6;
+            this.ctx.setLineDash([4, 2]);
+            this.ctx.beginPath();
+            this.ctx.arc(player.x, player.y, radius + 8, 0, Math.PI * 2);
+            this.ctx.stroke();
+            this.ctx.restore();
+        }
+        
         // Draw main circle
         this.ctx.fillStyle = player.color;
         this.ctx.beginPath();
@@ -121,11 +141,6 @@ export class RenderManager {
             this.ctx.strokeStyle = '#ffff00';
             this.ctx.lineWidth = 3;
             this.ctx.stroke();
-            
-            // Add sprint effect if sprinting
-            if (this.gameClient.staminaSystem.isSprintActive()) {
-                this.createWindParticle(player.x, player.y);
-            }
         }
         
         // Draw name with background
@@ -169,8 +184,8 @@ export class RenderManager {
         }
     }
     
-    createWindParticle(x, y) {
-        // Create wind particles behind the player
+    createSprintParticles(x, y) {
+        // Create wind particles behind any sprinting player
         for (let i = 0; i < 2; i++) {
             const angle = Math.random() * Math.PI * 2;
             const distance = 20 + Math.random() * 10;
@@ -182,12 +197,13 @@ export class RenderManager {
                 vy: (Math.random() - 0.5) * 2,
                 life: 1.0,
                 decay: 0.02,
-                size: 2 + Math.random() * 3
+                size: 2 + Math.random() * 3,
+                color: `rgba(135, 206, 235, ${0.6 + Math.random() * 0.4})`
             });
         }
         
-        if (this.windParticles.length > 50) {
-            this.windParticles.splice(0, this.windParticles.length - 50);
+        if (this.windParticles.length > 100) {
+            this.windParticles.splice(0, this.windParticles.length - 100);
         }
     }
     
@@ -210,8 +226,8 @@ export class RenderManager {
         
         this.ctx.save();
         for (const particle of this.windParticles) {
-            this.ctx.globalAlpha = particle.life * 0.6;
-            this.ctx.fillStyle = '#87ceeb';
+            this.ctx.globalAlpha = particle.life * 0.8;
+            this.ctx.fillStyle = particle.color || '#87ceeb';
             this.ctx.beginPath();
             this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             this.ctx.fill();

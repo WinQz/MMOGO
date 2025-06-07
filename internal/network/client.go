@@ -172,8 +172,16 @@ func (c *Client) handleMove(data map[string]interface{}) {
 	// Update sprint status and stamina
 	c.Player.UpdateSprint(sprinting)
 
-	// Broadcast movement to all players immediately
-	c.Hub.BroadcastPlayerMoved(c.Player)
+	// Broadcast movement to all players with sprint status
+	movementData := map[string]interface{}{
+		"type":      "player_moved",
+		"id":        c.Player.ID,
+		"x":         c.Player.Position.X,
+		"y":         c.Player.Position.Y,
+		"sprinting": sprinting,
+	}
+
+	c.Hub.BroadcastToAll(movementData)
 }
 
 // handleChat processes and broadcasts chat messages
