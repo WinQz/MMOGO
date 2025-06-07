@@ -20,6 +20,13 @@
                     <div id="playerStats">
                         <div class="stat">❤️ <span id="health">100/100</span></div>
                         <div class="stat">⚡ <span id="mana">50/50</span></div>
+                        <div class="stat">🏃 <span id="stamina">100/100</span></div>
+                    </div>
+                    <!-- Stamina Bar -->
+                    <div id="staminaBarContainer" class="stat-bar-container">
+                        <div class="stat-bar-background">
+                            <div id="staminaBar" class="stat-bar-fill stamina-bar"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -38,9 +45,9 @@
             </div>
         </div>
 
-        <!-- Main Game Area -->
+        <!-- Main Game Area - Full Screen -->
         <div id="gameArea">
-            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            <canvas id="gameCanvas"></canvas>
             
             <!-- Mini Map -->
             <div id="miniMap">
@@ -87,6 +94,9 @@
                         <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move
                     </div>
                     <div class="control-item">
+                        <kbd>Shift</kbd> Sprint
+                    </div>
+                    <div class="control-item">
                         <kbd>Enter</kbd> Chat
                     </div>
                     <div class="control-item">
@@ -97,6 +107,7 @@
         </div>
     </div>
     
-    <script src="/static/game.js"></script>
+    <!-- Load the modular JavaScript -->
+    <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

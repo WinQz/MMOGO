@@ -155,7 +155,8 @@ func (ah *AuthHandlers) ValidateToken(token string) bool {
 	return err == nil
 }
 
-func (ah *AuthHandlers) extractToken(r *http.Request) string {
+// ExtractToken extracts token from request (public method)
+func (ah *AuthHandlers) ExtractToken(r *http.Request) string {
 	// Try Authorization header first
 	authHeader := r.Header.Get("Authorization")
 	if authHeader != "" {
@@ -172,6 +173,11 @@ func (ah *AuthHandlers) extractToken(r *http.Request) string {
 	}
 
 	return ""
+}
+
+func (ah *AuthHandlers) extractToken(r *http.Request) string {
+	// Keep the private method for internal use and call the public one
+	return ah.ExtractToken(r)
 }
 
 func writeErrorResponse(w http.ResponseWriter, message string, statusCode int) {

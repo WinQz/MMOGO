@@ -5,102 +5,104 @@ import (
 	"golang-mmo-server/internal/handlers"
 	"golang-mmo-server/internal/network"
 	"net/http"
+	"strings"
 )
 
 type Router struct {
-	authHandlers *handlers.AuthHandlers
-	gameHandlers *handlers.GameHandlers
-	hub          *network.Hub
+	authService *auth.AuthService
+	hub         *network.Hub
+	authHandler *handlers.AuthHandlers
 }
 
 func NewRouter(authService *auth.AuthService, hub *network.Hub) *Router {
 	return &Router{
-		authHandlers: handlers.NewAuthHandlers(authService),
-		gameHandlers: handlers.NewGameHandlers(hub),
-		hub:          hub,
+		authService: authService,
+		hub:         hub,
+		authHandler: handlers.NewAuthHandlers(authService),
 	}
 }
 
-func (r *Router) SetupRoutes() {
-	// Serve static files
-	r.setupStaticRoutes()
+func (router *Router) SetupRoutes() {
+	// Static files with proper MIME types
+	router.setupStaticRoutes()
 
 	// Authentication routes
-	r.setupAuthRoutes()
+	router.setupAuthRoutes()
 
 	// Game routes
-	r.setupGameRoutes()
+	router.setupGameRoutes()
 
-	// WebSocket routes
-	r.setupWebSocketRoutes()
+	// WebSocket route
+	router.setupWebSocketRoute()
+
+	// Main routes
+	router.setupMainRoutes()
 }
 
-func (r *Router) setupStaticRoutes() {
-	// Serve static files
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static/"))))
+func (router *Router) setupStaticRoutes() {
+	// Create a custom file server that sets correct MIME types
+	fs := http.FileServer(http.Dir("./web/static/"))
 
-	// Auth page
-	http.HandleFunc("/auth", r.serveAuthPage)
+	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
+		// Set correct MIME type for JavaScript modules
+		if strings.HasSuffix(r.URL.Path, ".js") {
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		} else if strings.HasSuffix(r.URL.Path, ".css") {
+			w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		} else if strings.HasSuffix(r.URL.Path, ".html") {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		}
 
-	// Protected main page
-	http.HandleFunc("/", r.serveMainPage)
-}
+		// Add CORS headers for development
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-func (r *Router) setupAuthRoutes() {
-	http.HandleFunc("/api/auth/register", r.authHandlers.Register)
-	http.HandleFunc("/api/auth/login", r.authHandlers.Login)
-	http.HandleFunc("/api/auth/logout", r.authHandlers.Logout)
-	http.HandleFunc("/api/auth/verify", r.authHandlers.VerifyToken)
-}
-
-func (r *Router) setupGameRoutes() {
-	http.HandleFunc("/api/game/player/movement", r.gameHandlers.HandlePlayerMovement)
-	http.HandleFunc("/api/game/player/action", r.gameHandlers.HandlePlayerAction)
-	http.HandleFunc("/api/game/world/state", r.gameHandlers.GetWorldState)
-}
-
-func (r *Router) setupWebSocketRoutes() {
-	http.HandleFunc("/ws", func(w http.ResponseWriter, req *http.Request) {
-		network.HandleWebSocket(r.hub, w, req)
+		// Strip the /static/ prefix and serve
+		http.StripPrefix("/static/", fs).ServeHTTP(w, r)
 	})
 }
 
-func (r *Router) serveAuthPage(w http.ResponseWriter, req *http.Request) {
-	http.ServeFile(w, req, "./web/static/auth.html")
+func (router *Router) setupAuthRoutes() {
+	http.HandleFunc("/api/auth/register", router.authHandler.Register)
+	http.HandleFunc("/api/auth/login", router.authHandler.Login)
+	http.HandleFunc("/api/auth/logout", router.authHandler.Logout)
+	http.HandleFunc("/api/auth/verify", router.authHandler.VerifyToken)
 }
 
-func (r *Router) serveMainPage(w http.ResponseWriter, req *http.Request) {
-	// For browser requests, check if user has a valid session cookie
-	cookie, err := req.Cookie("auth_token")
-	if err != nil || cookie.Value == "" {
-		// No cookie, redirect to auth
-		http.Redirect(w, req, "/auth", http.StatusFound)
-		return
-	}
-
-	// Validate the session
-	if !r.authHandlers.ValidateToken(cookie.Value) {
-		// Invalid session, redirect to auth
-		http.Redirect(w, req, "/auth", http.StatusFound)
-		return
-	}
-
-	http.ServeFile(w, req, "./web/static/index.html")
+func (router *Router) setupGameRoutes() {
+	// Game API routes can be added here
+	http.HandleFunc("/api/game/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status": "online", "players": 0}`))
+	})
 }
 
-func (r *Router) isAuthenticated(req *http.Request) bool {
-	// Check for token in Authorization header
-	token := req.Header.Get("Authorization")
-	if token != "" {
-		return r.authHandlers.ValidateToken(token)
-	}
+func (router *Router) setupWebSocketRoute() {
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		network.HandleWebSocket(router.hub, w, r)
+	})
+}
 
-	// Check for token in cookies
-	cookie, err := req.Cookie("auth_token")
-	if err == nil && cookie.Value != "" {
-		return r.authHandlers.ValidateToken(cookie.Value)
-	}
+func (router *Router) setupMainRoutes() {
+	// Auth page (public)
+	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./web/auth.html")
+	})
 
-	// Check localStorage token (handled by frontend)
-	return false
+	// Main game page (protected)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Only serve index.html for root path
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Check authentication
+		token := router.authHandler.ExtractToken(r)
+		if token == "" || !router.authHandler.ValidateToken(token) {
+			http.Redirect(w, r, "/auth", http.StatusSeeOther)
+			return
+		}
+
+		http.ServeFile(w, r, "./web/static/index.html")
+	})
 }

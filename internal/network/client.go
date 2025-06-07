@@ -151,6 +151,7 @@ func (c *Client) handleMove(data map[string]interface{}) {
 
 	x, _ := data["x"].(float64)
 	y, _ := data["y"].(float64)
+	sprinting, _ := data["sprinting"].(bool)
 
 	// Smooth position validation
 	oldX, oldY := c.Player.Position.X, c.Player.Position.Y
@@ -167,6 +168,9 @@ func (c *Client) handleMove(data map[string]interface{}) {
 
 	c.Player.Position.X = x
 	c.Player.Position.Y = y
+
+	// Update sprint status and stamina
+	c.Player.UpdateSprint(sprinting)
 
 	// Broadcast movement to all players immediately
 	c.Hub.BroadcastPlayerMoved(c.Player)
